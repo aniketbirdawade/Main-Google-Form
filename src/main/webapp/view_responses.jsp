@@ -1,139 +1,140 @@
-<%@ page import="java.sql.*, com.formbuilder.db.DBConnection" %>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<!DOCTYPE html>
+<%@ page import="java.sql.*" %>
+<%@ page import="com.formbuilder.db.DBConnection" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>View Responses</title>
-<style>
-	body 
-	{ 
-	font-family: Arial, sans-serif; 
-	background: #f9f9f9; 
-	padding: 30px; 
-	}
-	h2 
-	{ color: #333; 
-	text-align: center; 
-	}
-	table 
-	{ width: 90%; 
-	margin: 20px auto; 
-	border-collapse: collapse; 
-	background: white; 
-	}
-	th, td 
-	{ 
-	border: 1px solid #ddd; 
-	padding: 12px; 
-	text-align: left; 
-	}
-	th 
-	{ 
-	background: #4CAF50; 
-	color: white; 
-	}
-	tr:nth-child(even) 
-	{ 
-	background: #f2f2f2; 
-	}
-	.container 
-	{ 
-	text-align: center; 
-	margin-bottom: 20px; 
-	}
-	select, button 
-	{ 
-	padding: 8px; 
-	font-size: 14px; 
-	}
+    <title>View Form Responses</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .response-block {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .question {
+            font-weight: bold;
+            color: #222;
+        }
+        .answer {
+            color: #555;
+            margin-left: 10px;
+        }
+        a.button {
+            display: inline-block;
+            text-decoration: none;
+            background: #0078d7;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        a.button:hover {
+            background: #005fa3;
+        }
     </style>
 </head>
 <body>
-    <h2>View Form Responses</h2>
-
 <div class="container">
-	<form action="ViewResponsesServlet" method="get">
-	<label for="formId">Select Form: </label>
-	<select name="formId" id="formId" required>
-	<option value="">-- Choose a form --</option>
-	<%
-	try 
-	{
-		Connection conn = DBConnection.getConnection();
-		PreparedStatement ps = conn.prepareStatement("SELECT form_id, title FROM forms");
-		ResultSet rs = ps.executeQuery();
-		while (rs.next()) 
-		{
-			int id = rs.getInt("form_id");
-			String title = rs.getString("title");
-	%>
-	<option value="<%=id%>"><%=title%></option>
-	<%
-	}
-		conn.close();
-		} 
-	catch (Exception e) 
-	{
-		out.println("<option disabled>Error loading forms</option>");
-		}
-		%>
-	</select>
-            <button type="submit">View Responses</button>
-        </form>
-    </div>
+    <a href="index.jsp" class="button">← Back to Forms</a>
+    <h1>Form Responses</h1>
 
-<%
-	String formId = request.getParameter("formId");
-	if (formId != null) 
-	{
-		try
-		{
-			Connection conn = DBConnection.getConnection();
-			PreparedStatement ps = conn.prepareStatement("SELECT question_text, answer_text, user_name, submitted_at " +
-                    "FROM responses WHERE form_id = ? ORDER BY user_name");
-			ps.setInt(1, Integer.parseInt(formId));
-			ResultSet rs = ps.executeQuery();
-
-			boolean hasData = false;
- %>
-
-<table>
-	<tr>
-	<th>User</th>
-	<th>Question</th>
-	<th>Answer</th>
-	<th>Submitted At</th>
-	</tr>
-
-<%
-	while (rs.next()) 
-	{
-		hasData = true;
-%>
-<tr>
-	<td><%= rs.getString("user_name") %></td>
-	<td><%= rs.getString("question_text") %></td>
-	<td><%= rs.getString("answer_text") %></td>
-	<td><%= rs.getTimestamp("submitted_at") %></td>
-</tr>
-<%
-	}
-		if (!hasData) 
-		{
-    %>
-    <tr><td colspan="4" style="text-align:center;">No responses yet for this form.</td></tr>
     <%
-	}
-		conn.close();
-    		} 
-		catch (Exception e) 
-		{
-			out.println("<p style='color:red;text-align:center;'>Error: " + e.getMessage() + "</p>");
-		}
-	}
-  %>
+        String formIdStr = request.getParameter("form_id");
+        if (formIdStr == null || formIdStr.isEmpty()) {
+    %>
+        <p style="color:red;">No form selected.</p>
+    <%
+        } else {
+            int formId = Integer.parseInt(formIdStr);
+            Connection conn = null;
+            PreparedStatement psForm = null, psResponses = null, psAnswers = null;
+            ResultSet rsForm = null, rsResponses = null, rsAnswers = null;
 
-</table>
+            try {
+                conn = DBConnection.getConnection();
+
+                // Fetch form title
+                psForm = conn.prepareStatement("SELECT title FROM forms WHERE form_id=?");
+                psForm.setInt(1, formId);
+                rsForm = psForm.executeQuery();
+                if (rsForm.next()) {
+    %>
+                    <h2><%= rsForm.getString("title") %></h2>
+    <%
+                }
+
+                // Fetch responses
+                psResponses = conn.prepareStatement("SELECT response_id FROM responses WHERE form_id=? ORDER BY response_id DESC");
+                psResponses.setInt(1, formId);
+                rsResponses = psResponses.executeQuery();
+
+                boolean hasResponses = false;
+                while (rsResponses.next()) {
+                    hasResponses = true;
+                    int responseId = rsResponses.getInt("response_id");
+    %>
+                    <div class="response-block">
+                        <h3>Response ID: <%= responseId %></h3>
+                        <%
+                            psAnswers = conn.prepareStatement(
+                                "SELECT q.question_text, a.answer_text " +
+                                "FROM answers a JOIN questions q ON a.question_id = q.question_id " +
+                                "WHERE a.response_id = ?"
+                            );
+                            psAnswers.setInt(1, responseId);
+                            rsAnswers = psAnswers.executeQuery();
+
+                            while (rsAnswers.next()) {
+                        %>
+                                <p><span class="question"><%= rsAnswers.getString("question_text") %>:</span>
+                                   <span class="answer"><%= rsAnswers.getString("answer_text") %></span></p>
+                        <%
+                            }
+                            rsAnswers.close();
+                            psAnswers.close();
+                        %>
+                    </div>
+    <%
+                }
+                if (!hasResponses) {
+    %>
+                    <p>No responses yet.</p>
+    <%
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                out.println("<p style='color:red;'>Error loading responses: " + e.getMessage() + "</p>");
+            } finally {
+                try {
+                    if (rsForm != null) rsForm.close();
+                    if (rsResponses != null) rsResponses.close();
+                    if (psForm != null) psForm.close();
+                    if (psResponses != null) psResponses.close();
+                    if (conn != null) conn.close();
+                } catch (Exception ex) { ex.printStackTrace(); }
+            }
+        }
+    %>
+</div>
 </body>
 </html>

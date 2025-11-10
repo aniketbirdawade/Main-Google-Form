@@ -84,6 +84,27 @@
 <header> Google Form Builder – Admin Dashboard </header>
 
 <div class="container">
+
+<%
+    String msg = request.getParameter("msg");
+    if (msg != null && !msg.trim().isEmpty()) {
+%>
+    <div style="
+        background-color: <%= msg.toLowerCase().contains("success") ? "#d4edda" : "#f8d7da" %>;
+        color: <%= msg.toLowerCase().contains("success") ? "#155724" : "#721c24" %>;
+        border: 1px solid <%= msg.toLowerCase().contains("success") ? "#c3e6cb" : "#f5c6cb" %>;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+    ">
+        <%= msg %>
+    </div>
+<%
+    }
+%>
+
 <div class="top-actions">
 	<a href="create_form.jsp" class="create">+ Create New Form</a>
 	</div>
@@ -118,11 +139,18 @@
 	<td><%= rs.getString("description") %></td>
 	<td><%= rs.getString("created_by") %></td>
 	<td><%= rs.getTimestamp("created_at") %></td>
-	<td class="actions">
-		<a href="add_questions.jsp?formId=<%=rs.getInt("form_id")%>" class="add">Add Questions</a>
-		<a href="fill_form.jsp?formId=<%=rs.getInt("form_id")%>" class="view">Fill Form</a>
-		<a href="view_responses.jsp?formId=<%=rs.getInt("form_id")%>" class="view">View Responses</a>
-	</td>
+<td class="actions">
+    <a href="add_questions.jsp?form_id=<%=rs.getInt("form_id")%>" class="add">Add Questions</a>
+    <a href="fill_form.jsp?form_id=<%=rs.getInt("form_id")%>" class="view">Fill Form</a>
+    <a href="view_responses.jsp?form_id=<%=rs.getInt("form_id")%>" class="view">View Responses</a>
+    <a href="DeleteFormServlet?form_id=<%=rs.getInt("form_id")%>" 
+   onclick="return confirm('Are you sure you want to delete this form?')" 
+   style="background-color:#e74c3c;color:white;padding:6px 10px;border-radius:5px;text-decoration:none;">
+   Delete
+</a>
+
+</td>
+
 	</tr>
 	<%
 	}
