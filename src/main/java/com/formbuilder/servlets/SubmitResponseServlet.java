@@ -10,99 +10,158 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 @WebServlet("/SubmitResponseServlet")
-public class SubmitResponseServlet extends HttpServlet {
+public class SubmitResponseServlet extends HttpServlet
+{
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException
+	{
+		String formIdStr = request.getParameter("form_id");
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+		if (formIdStr == null || formIdStr.isEmpty())
+		{
+			response.sendRedirect("index.jsp?msg=Invalid+Form+ID");
+			return;
+		}
 
-        String formIdStr = request.getParameter("form_id");
-        if (formIdStr == null || formIdStr.isEmpty()) {
-            response.sendRedirect("index.jsp?msg=Invalid+Form+ID");
-            return;
-        }
+		HttpSession session = request.getSession(false);
 
-        HttpSession session = request.getSession(false);
-        if (session == null) {
-            response.sendRedirect("fill_form.jsp?form_id=" + formIdStr + "&msg=Session+expired");
-            return;
-        }
+		if (session == null)
+		{
+			response.sendRedirect("fill_form.jsp?form_id=" + formIdStr + "&msg=Session+expired");
+			return;
+		}
 
-        // read answers map (joined values with "||")
-        Map<String,String> allAnswers = (Map<String,String>) session.getAttribute("form_answers");
-        if (allAnswers == null || allAnswers.isEmpty()) {
-            response.sendRedirect("fill_form.jsp?form_id=" + formIdStr + "&msg=No+answers+found");
-            return;
-        }
+		Map<String,String> allAnswers = (Map<String,String>) session.getAttribute("form_answers");
 
-        Connection conn = null;
-        PreparedStatement psResp = null;
-        PreparedStatement psAns = null;
-        ResultSet rs = null;
+		if (allAnswers == null || allAnswers.isEmpty())
+		{
+			response.sendRedirect("fill_form.jsp?form_id=" + formIdStr + "&msg=No+answers+found");
+			return;
+		}
 
-        try {
-            int formId = Integer.parseInt(formIdStr);
+		Connection conn = null;
+		PreparedStatement psResp = null;
+		PreparedStatement psAns = null;
+		ResultSet rs = null;
 
-            conn = DBConnection.getConnection();
-            conn.setAutoCommit(false);
+		try
+		{
+			int formId = Integer.parseInt(formIdStr);
 
-            // Insert into responses to create response_id
-            String insertResponse = "INSERT INTO responses (form_id) VALUES (?)";
-            psResp = conn.prepareStatement(insertResponse, Statement.RETURN_GENERATED_KEYS);
-            psResp.setInt(1, formId);
-            psResp.executeUpdate();
+			conn = DBConnection.getConnection();
+			conn.setAutoCommit(false);
 
-            rs = psResp.getGeneratedKeys();
-            int responseId = 0;
-            if (rs.next()) responseId = rs.getInt(1);
+			String insertResponse = "INSERT INTO responses (form_id) VALUES (?)";
+			psResp = conn.prepareStatement(insertResponse, Statement.RETURN_GENERATED_KEYS);
+			psResp.setInt(1, formId);
+			psResp.executeUpdate();
 
-            // Prepare answer insert
-            psAns = conn.prepareStatement("INSERT INTO answers (response_id, question_id, answer_text) VALUES (?, ?, ?)");
+			rs = psResp.getGeneratedKeys();
+			int responseId = 0;
 
-            for (Map.Entry<String,String> e : allAnswers.entrySet()) {
-                String key = e.getKey();
-                if (!key.startsWith("q_")) continue;
+			if (rs.next())
+			{
+				responseId = rs.getInt(1);
+			}
 
-                String valueJoined = e.getValue(); // may be "a" or "opt1||opt2"
-                if (valueJoined == null || valueJoined.trim().isEmpty()) continue;
+			psAns = conn.prepareStatement("INSERT INTO answers (response_id, question_id, answer_text) VALUES (?, ?, ?)");
 
-                int qid = Integer.parseInt(key.substring(2));
+			for (Map.Entry<String,String> e : allAnswers.entrySet())
+			{
+				String key = e.getKey();
 
-                // split multiple values
-                String[] parts = valueJoined.split("\\|\\|");
-                for (String part : parts) {
-                    String ansText = part.trim();
-                    if (ansText.isEmpty()) continue;
-                    psAns.setInt(1, responseId);
-                    psAns.setInt(2, qid);
-                    psAns.setString(3, ansText);
-                    psAns.addBatch();
-                }
+				if (!key.startsWith("q_"))
+				{
+					continue;
+				}
+
+				String valueJoined = e.getValue();
+
+				if (valueJoined == null || valueJoined.trim().isEmpty())
+				{
+					continue;
+				}
+
+				int qid = Integer.parseInt(key.substring(2));
+
+				String[] parts = valueJoined.split("\\|\\|");
+
+				for (String part : parts)
+				{
+					String ansText = part.trim();
+
+					if (ansText.isEmpty())
+					{
+						continue;
+					}
+
+					psAns.setInt(1, responseId);
+					psAns.setInt(2, qid);
+					psAns.setString(3, ansText);
+					psAns.addBatch();
+				}
+			}
+
+			psAns.executeBatch();
+			conn.commit();
+
+			session.removeAttribute("form_answers");
+
+			response.sendRedirect("view_responses.jsp?form_id=" + formId);
+		}
+		catch (Exception ex)
+		{
+			ex.printStackTrace();
+
+			try
+			{
+                if (conn != null) conn.rollback();
+			}
+			catch (SQLException ignored)
+			{
+			}
+
+			response.sendRedirect("fill_form.jsp?form_id=" + formIdStr + "&msg=Submit+Failed");
+		}
+		finally
+		{
+			try 
+            { 
+                if (rs != null) rs.close(); 
+            } 
+            catch (Exception ignored) 
+            {
+
             }
+			try 
+            { 
+                if (psResp != null) psResp.close(); 
+            } 
+            catch (Exception ignored) 
+            {
 
-            psAns.executeBatch();
-            conn.commit();
+            }
+			try 
+            { 
+                if (psAns != null) psAns.close(); 
+            } 
+            catch (Exception ignored) 
+            {
 
-            // clear session answers now (important)
-            session.removeAttribute("form_answers");
+            }
+			try 
+            { 
+                if (conn != null) conn.close(); 
+            } catch (Exception ignored) 
+            {
+                
+            }
+		}
+	}
 
-            // redirect to view or back to fill form with success message
-            response.sendRedirect("view_responses.jsp?form_id=" + formId);
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            try { if (conn != null) conn.rollback(); } catch (SQLException ignored) {}
-            response.sendRedirect("fill_form.jsp?form_id=" + formIdStr + "&msg=Submit+Failed");
-        } finally {
-            try { if (rs != null) rs.close(); } catch (Exception ignored) {}
-            try { if (psResp != null) psResp.close(); } catch (Exception ignored) {}
-            try { if (psAns != null) psAns.close(); } catch (Exception ignored) {}
-            try { if (conn != null) conn.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    // allow GET if forwarded as GET for safety (calls doPost)
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doPost(request, response);
-    }
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException
+	{
+		doPost(request, response);
+	}
 }
