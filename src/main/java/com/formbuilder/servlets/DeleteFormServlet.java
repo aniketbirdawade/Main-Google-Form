@@ -13,39 +13,46 @@ import jakarta.servlet.http.HttpServletResponse;
 
 
 @WebServlet("/DeleteFormServlet")
-public class DeleteFormServlet extends HttpServlet {
+public class DeleteFormServlet extends HttpServlet 
+{
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException 
+    {
         String formIdParam = request.getParameter("form_id");
 
-        if (formIdParam == null || formIdParam.isEmpty()) {
+        if (formIdParam == null || formIdParam.isEmpty()) 
+        {
             response.sendRedirect("index.jsp?msg=Invalid+Form+ID");
             return;
         }
 
-        try {
+        try 
+        {
             int formId = Integer.parseInt(formIdParam);
             Connection conn = DBConnection.getConnection();
 
-            // Delete questions first (because of foreign key constraints)
             PreparedStatement ps1 = conn.prepareStatement("DELETE FROM questions WHERE form_id = ?");
             ps1.setInt(1, formId);
             ps1.executeUpdate();
 
-            // Then delete the form itself
             PreparedStatement ps2 = conn.prepareStatement("DELETE FROM forms WHERE form_id = ?");
             ps2.setInt(1, formId);
             int rows = ps2.executeUpdate();
 
             conn.close();
 
-            if (rows > 0) {
+            if (rows > 0) 
+            {
                 response.sendRedirect("index.jsp?msg=Form+Deleted+Successfully");
-            } else {
+            } 
+            else 
+            {
                 response.sendRedirect("index.jsp?msg=Invalid+Form+ID");
             }
 
-        } catch (Exception e) {
+        } 
+        catch (Exception e) 
+        {
             e.printStackTrace();
             response.sendRedirect("index.jsp?msg=Error+Deleting+Form");
         }

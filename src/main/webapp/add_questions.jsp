@@ -1,85 +1,144 @@
 <%@ page import="java.sql.*, com.formbuilder.db.DBConnection" %>
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Add Questions</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f6fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        body 
+        { 
+        font-family: Arial, sans-serif; 
+        background-color: #f0f2f5; 
+        padding: 30px; 
         }
-        form {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            width: 420px;
+        form 
+        { 
+        background: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        width: 600px; 
+        margin: auto; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
         }
-        select, input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+        h2 
+        { 
+        text-align: center; 
+        color: #333; 
         }
-        button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            border: none;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
+        label 
+        { 
+        font-weight: bold; 
+        display: block; 
+        margin-top: 15px; 
         }
-        button:hover {
-            background-color: #0056b3;
+        input[type="text"], 
+        textarea, 
+        select, 
+        input[type="number"] 
+        { 
+        width: 100%; 
+        padding: 8px; 
+        margin-top: 5px; 
+        border-radius: 5px; 
+        border: 1px solid #ccc; 
+        }
+        button 
+        { background-color: grey; 
+        color: white; 
+        padding: 10px 15px; 
+        border: none; 
+        border-radius: 5px; 
+        margin-top: 15px; 
+        cursor: pointer; 
+        }
+        button:hover 
+        { 
+        background-color: grey; 
+        }
+        .back 
+        { 
+        display: inline-block; 
+        margin-bottom: 20px; 
+        text-decoration: none; 
+        color: grey; 
+        font-weight: bold; 
+        }
+        .message 
+        { text-align: center; 
+        margin-bottom: 15px; 
+        font-weight: bold; 
+        }
+        .success 
+        { 
+        color: green; 
+        }
+        .error 
+        { 
+        color: red; 
         }
     </style>
 </head>
 <body>
 
-<form action="AddQuestionServlet" method="post">
-    <h2>Add Question to Form</h2>
+<%
+    Object formIdObj = request.getAttribute("formId");
+    String formId = null;
+    if (formIdObj != null) 
+    {
+        formId = formIdObj.toString();
+    } 
+    else 
+    {
+        formId = request.getParameter("form_id");
+    }
 
-    <label>Select Form:</label>
-    <select name="form_id" required>
-        <option value="">-- Select Form --</option>
-        <%
-            try {
-                Connection conn = DBConnection.getConnection();
-                PreparedStatement ps = conn.prepareStatement("SELECT form_id, title FROM forms");
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-        %>
-                    <option value="<%= rs.getInt("form_id") %>"><%= rs.getString("title") %></option>
-        <%
-                }
-                rs.close();
-                ps.close();
-                conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        %>
-    </select>
+    if (formId == null || formId.trim().isEmpty()) 
+    {
+        out.println("<h3 style='color:red;text-align:center;'>Invalid form ID!</h3>");
+        return;
+    }
+
+    String successMsg = (String) request.getAttribute("successMsg");
+    String errorMsg = (String) request.getAttribute("errorMsg");
+%>
+
+<a href="index.jsp" class="back">&larr; Back to Dashboard</a>
+
+<% if (successMsg != null) 
+{ %>
+    <div class="message success"><%= successMsg %></div>
+<% 
+} 
+%>
+<% if (errorMsg != null) 
+{ 
+%>
+    <div class="message error"><%= errorMsg %></div>
+<% 
+} 
+%>
+
+<form action="AddQuestionServlet" method="post">
+    <input type="hidden" name="form_id" value="<%= formId %>">
+
+    <h2>Add Question</h2>
 
     <label>Question Text:</label>
-    <textarea name="question_text" required></textarea>
+    <input type="text" name="question_text" required>
 
     <label>Question Type:</label>
     <select name="question_type" required>
         <option value="text">Text</option>
         <option value="radio">Multiple Choice (Single Answer)</option>
-        <option value="checkbox">Checkbox (Multiple Answers)</option>
+        <option value="checkbox">Check Box (Multiple Answers)</option>
     </select>
 
-    <label>Options (comma-separated for radio/checkbox):</label>
-    <input type="text" name="options" placeholder="e.g. Yes,No,Maybe">
+    <label>Options (comma separated):</label>
+    <input type="text" name="options" placeholder="e.g. Yes, No, Maybe">
+
+    <label>Page Number:</label>
+    <input type="number" name="page_number" value="1" min="1" required>
 
     <button type="submit">Add Question</button>
 </form>

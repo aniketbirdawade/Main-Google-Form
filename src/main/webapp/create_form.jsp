@@ -33,7 +33,7 @@
 	{
 	margin-top: 15px;
 	padding: 10px 20px;
-	background-color: #007bff;
+	background-color: grey;
 	border: none;
 	color: white;
 	border-radius: 6px;

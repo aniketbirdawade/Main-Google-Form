@@ -9,14 +9,14 @@
 	body 
 	{ 
 	font-family: Arial, sans-serif; 
-	background-color: #f0f2f5; 
+	background-color: white; 
 	margin: 0; 
 	padding: 0; 
 	}
 	header 
 	{ 
-	background-color: #4CAF50; 
-	color: white; 
+	background-color: grey; 
+	color: black; 
 	padding: 15px; 
 	text-align: center; 
 	font-size: 24px; 
@@ -43,32 +43,32 @@
 	text-align: left; 
 	}
 	th 
-	{ background-color: #4CAF50; 
-	color: white; 
+	{ background-color: white; 
+	color: black; 
 	}
 	tr:hover 
 	{ 
-	background-color: #f1f1f1; 
+	background-color: white; 
 	}
 	.actions a 
 	{ 
 	text-decoration: none; 
-	color: white; 
+	color: black; 
 	padding: 6px 10px; 
 	border-radius: 5px; 
 	margin-right: 5px; 
 	}
 	.add 
 	{ 
-	background-color: #2196F3; 
+	background-color: grey; 
 	}
 	.view 
 	{ 
-	background-color: #4CAF50; 
+	background-color: grey; 
 	}
 	.create 
 	{ 
-	background-color: #ff9800; 
+	background-color: grey; 
 	padding: 10px 15px; 
 	border-radius: 5px; 
 	color: white; 
@@ -80,6 +80,7 @@
 	}
     </style>
 	</head>
+	
 <body>
 <header> Google Form Builder – Admin Dashboard </header>
 
@@ -87,7 +88,8 @@
 
 <%
     String msg = request.getParameter("msg");
-    if (msg != null && !msg.trim().isEmpty()) {
+    if (msg != null && !msg.trim().isEmpty()) 
+    {
 %>
     <div style="
         background-color: <%= msg.toLowerCase().contains("success") ? "#d4edda" : "#f8d7da" %>;
@@ -139,16 +141,17 @@
 	<td><%= rs.getString("description") %></td>
 	<td><%= rs.getString("created_by") %></td>
 	<td><%= rs.getTimestamp("created_at") %></td>
+	
+	
 <td class="actions">
     <a href="add_questions.jsp?form_id=<%=rs.getInt("form_id")%>" class="add">Add Questions</a>
     <a href="fill_form.jsp?form_id=<%=rs.getInt("form_id")%>" class="view">Fill Form</a>
     <a href="view_responses.jsp?form_id=<%=rs.getInt("form_id")%>" class="view">View Responses</a>
-    <a href="DeleteFormServlet?form_id=<%=rs.getInt("form_id")%>" 
-   onclick="return confirm('Are you sure you want to delete this form?')" 
-   style="background-color:#e74c3c;color:white;padding:6px 10px;border-radius:5px;text-decoration:none;">
-   Delete
-</a>
-
+    <a href="DeleteFormServlet?form_id=<%=rs.getInt("form_id")%>"
+       onclick="return confirm('Are you sure you want to delete this form?')"
+       style="background-color:#e74c3c;color:white;padding:6px 10px;border-radius:5px;text-decoration:none;">
+       Delete
+    </a>
 </td>
 
 	</tr>
