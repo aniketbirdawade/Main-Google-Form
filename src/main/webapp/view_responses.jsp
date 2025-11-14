@@ -109,20 +109,25 @@
                     <div class="response-block">
                         <h3>Response ID: <%= responseId %></h3>
                         <%
-                            psAnswers = conn.prepareStatement(
-                                "SELECT q.question_text, a.answer_text " +
-                                "FROM answers a JOIN questions q ON a.question_id = q.question_id " +
-                                "WHERE a.response_id = ?");
-                            psAnswers.setInt(1, responseId);
-                            rsAnswers = psAnswers.executeQuery();
+                        psAnswers = conn.prepareStatement(
+                        	    "SELECT q.question_text, a.answer_text " +
+                        	    "FROM answers a JOIN questions q ON a.question_id = q.question_id " +
+                        	    "WHERE a.response_id = ? " +
+                        	    "ORDER BY q.page_number ASC, q.question_id ASC"
+                        	);
+                        	psAnswers.setInt(1, responseId);
+                        	rsAnswers = psAnswers.executeQuery();
 
-                            while (rsAnswers.next()) 
-                            {
-                        %>
-                                <p><span class="question"><%= rsAnswers.getString("question_text") %>:</span>
-                                   <span class="answer"><%= rsAnswers.getString("answer_text") %></span></p>
-                        <%
-                            }
+                        	while (rsAnswers.next()) 
+                        	{
+                        	%>
+                        	    <p>
+                        	        <span class="question"><%= rsAnswers.getString("question_text") %>:</span>
+                        	        <span class="answer"><%= rsAnswers.getString("answer_text") %></span>
+                        	    </p>
+                        	<%
+                        	}
+
                             rsAnswers.close();
                             psAnswers.close();
                         %>
